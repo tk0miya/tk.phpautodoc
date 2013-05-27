@@ -168,6 +168,7 @@ def p_inner_statement_list(p):
 
 def p_inner_statement(p):
     '''inner_statement : statement
+                       | comment
                        | function_declaration_statement
                        | class_declaration_statement
                        | HALT_COMPILER LPAREN RPAREN SEMI'''
