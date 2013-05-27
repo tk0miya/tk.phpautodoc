@@ -44,7 +44,7 @@
 import os
 import sys
 import phplex
-from phply import phpast as ast
+import phpast as ast
 import ply.yacc as yacc
 
 # Get the token map

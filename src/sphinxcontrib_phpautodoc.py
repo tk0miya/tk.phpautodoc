@@ -54,8 +54,8 @@ class PHPAutodocDirective(Directive):
         self.add_line('')
 
     def parse(self, filename):
-        from phplex import lexer
-        from phpparse import parser
+        from phply.phplex import lexer
+        from phply.phpparse import parser
 
         try:
             with open(filename) as f:
