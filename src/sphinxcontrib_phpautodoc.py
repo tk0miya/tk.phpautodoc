@@ -24,6 +24,7 @@ class PHPAutodocDirective(Directive):
         srcdir = self.state.document.settings.env.srcdir
         filename = os.path.join(srcdir, self.arguments[0])
         self.parse(filename)
+        self.state.document.settings.env.note_dependency(filename)
 
         node = nodes.paragraph()
         node.document = self.state.document
