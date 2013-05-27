@@ -77,7 +77,7 @@ class PHPAutodocDirective(Directive):
 
             self._parse(tree)
         except:
-            pass  # FIXME: ignore any errors
+            raise
 
     def _parse(self, tree):
         from phply import phpast as ast
