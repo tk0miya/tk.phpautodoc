@@ -5,7 +5,7 @@ import pkg_resources
 
 
 setup(
-     name='tk0.phpdoc',
+     name='tk.phpautodoc',
      version='0.0.1',
      description='sample implementation of phpdocumentor using sphinx',
      author='Takeshi Komiya',
