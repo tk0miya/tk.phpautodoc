@@ -88,6 +88,7 @@ class PHPAutodocDirective(Directive):
                 self.add_entry('function', node.name, last_node)
             elif isinstance(node, ast.Class):
                 self.add_entry('class', node.name, last_node)
+                self._parse(node.nodes)
             elif isinstance(node, ast.Method):
                 self.add_entry('method', node.name, last_node)
 
