@@ -33,8 +33,10 @@ class PHPAutodocDirective(Directive):
         return node.children
 
     def add_entry(self, directive, name, comment):
+        from phply import phpast as ast
+
         if isinstance(comment, ast.Comment):
-            if not self.is_private(last_node):
+            if not self.is_private(comment):
                 self.add_directive_header(directive, name)
                 self.add_comment(comment)
         else:
