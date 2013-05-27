@@ -31,6 +31,14 @@ class PHPAutodocDirective(Directive):
 
         return node.children
 
+    def add_entry(self, directive, name, comment):
+        if isinstance(comment, ast.Comment):
+            if not self.is_private(last_node):
+                self.add_directive_header(directive, name)
+                self.add_comment(comment)
+        else:
+            self.add_directive_header(directive, name)
+
     def add_line(self, line, *lineno):
         self.result.append(self.indent + line, '<phpautodoc>', *lineno)
 
@@ -38,6 +46,9 @@ class PHPAutodocDirective(Directive):
         domain = getattr(self, 'domain', 'php')
         self.add_line(u'.. %s:%s:: %s' % (domain, directive, name))
         self.add_line('')
+
+    def is_private(self, comment):
+        return re.search('@access\s+private', comment.text)
 
     def add_comment(self, comment):
         text = comment.text
@@ -71,24 +82,11 @@ class PHPAutodocDirective(Directive):
         last_node = None
         for node in tree:
             if isinstance(node, ast.Function):
-                self.add_directive_header('function', node.name)
-
-                if isinstance(last_node, ast.Comment):
-                    self.add_comment(last_node)
-
+                self.add_entry('function', node.name, last_node)
             elif isinstance(node, ast.Class):
-                self.add_directive_header('class', node.name)
-
-                if isinstance(last_node, ast.Comment):
-                    self.add_comment(last_node)
-
-                self._parse(node.nodes)
-
+                self.add_entry('class', node.name, last_node)
             elif isinstance(node, ast.Method):
-                self.add_directive_header('method', node.name)
-
-                if isinstance(last_node, ast.Comment):
-                    self.add_comment(last_node)
+                self.add_entry('method', node.name, last_node)
 
             last_node = node
 
