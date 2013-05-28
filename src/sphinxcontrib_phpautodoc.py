@@ -18,7 +18,7 @@ from docutils.statemachine import ViewList
 
 
 def is_comment(node):
-    if isinstance(node, ast.Comment):
+    if isinstance(node, ast.Comment) and node.text[0:3] == '/**':
         return True
     else:
         return False
@@ -88,16 +88,15 @@ class PHPAutodocDirective(Directive):
         if not is_comment(comment):
             return
 
-        text = comment.text
-        text = re.sub('^//', '', text)
-        text = re.sub('^/\*\s*', '', text)
-        text = re.sub('\s*\*/$', '', text)
+        for line in comment.text.splitlines():
+            if re.match('^\s*/?\*+ ?', line):  # starts with '/*' or '*' ?
+                line = re.sub('\s*\*/.*$', '', line)  # remove '*/' of tail
+                line = re.sub('^\s*/?\*+ ?', '', line)  # remove '/*' or '*' of top
 
-        r = re.compile('^\s*\*[ ]*', re.M)
-        text = re.sub(r, '', text)
-
-        for line in text.splitlines():
-            self.add_line(u'   ' + line)
+                if line:
+                    self.add_line(u'  ' + line)
+                else:
+                    self.add_line('')
 
         self.add_line('')
 
