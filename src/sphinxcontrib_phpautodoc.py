@@ -8,9 +8,27 @@
 """
 import os
 import re
+import codecs
+from phply import phpast as ast
+from phply.phplex import lexer
+from phply.phpparse import parser
 from docutils import nodes
 from docutils.parsers.rst import Directive
 from docutils.statemachine import ViewList
+
+
+def is_comment(node):
+    if isinstance(node, ast.Comment):
+        return True
+    else:
+        return False
+
+
+def is_private(comment):
+    if is_comment(comment):
+        return re.search('@access\s+private', comment.text)
+    else:
+        return False
 
 
 class PHPAutodocDirective(Directive):
@@ -33,14 +51,9 @@ class PHPAutodocDirective(Directive):
         return node.children
 
     def add_entry(self, directive, name, comment):
-        from phply import phpast as ast
-
-        if isinstance(comment, ast.Comment):
-            if not self.is_private(comment):
-                self.add_directive_header(directive, name)
-                self.add_comment(comment)
-        else:
+        if not is_private(comment):
             self.add_directive_header(directive, name)
+            self.add_comment(comment)
 
     def add_line(self, line, *lineno):
         self.result.append(self.indent + line, '<phpautodoc>', *lineno)
@@ -50,10 +63,10 @@ class PHPAutodocDirective(Directive):
         self.add_line(u'.. %s:%s:: %s' % (domain, directive, name))
         self.add_line('')
 
-    def is_private(self, comment):
-        return re.search('@access\s+private', comment.text)
-
     def add_comment(self, comment):
+        if not is_comment(comment):
+            return
+
         text = comment.text
         text = re.sub('^//', '', text)
         text = re.sub('^/\*\s*', '', text)
@@ -68,11 +81,8 @@ class PHPAutodocDirective(Directive):
         self.add_line('')
 
     def parse(self, filename):
-        from phply.phplex import lexer
-        from phply.phpparse import parser
-
         try:
-            with open(filename) as f:
+            with codecs.open(filename, 'r', 'utf-8') as f:
                 tree = parser.parse(f.read(), lexer=lexer)
 
             self._parse(tree)
@@ -80,15 +90,15 @@ class PHPAutodocDirective(Directive):
             raise
 
     def _parse(self, tree):
-        from phply import phpast as ast
-
         last_node = None
         for node in tree:
             if isinstance(node, ast.Function):
                 self.add_entry('function', node.name, last_node)
             elif isinstance(node, ast.Class):
                 self.add_entry('class', node.name, last_node)
-                self._parse(node.nodes)
+
+                if not is_private(last_node):
+                    self._parse(node.nodes)
             elif isinstance(node, ast.Method):
                 self.add_entry('method', node.name, last_node)
 
