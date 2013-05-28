@@ -31,6 +31,27 @@ def is_private(comment):
         return False
 
 
+def to_funcname(function):
+    if function.params is None:
+        funcname = function.name
+    else:
+        params = []
+        for param in function.params:
+            label = param.name
+            if param.default:
+                value = param.default
+                if isinstance(value, ast.Constant):
+                    label += ' = %s' % value.name
+                else:
+                    label += ' = %s' % value
+
+            params.append(label)
+
+        funcname = "%s(%s)" % (function.name, ", ".join(params))
+
+    return funcname
+
+
 class PHPAutodocDirective(Directive):
     has_content = False
     optional_arguments = 1
@@ -93,14 +114,14 @@ class PHPAutodocDirective(Directive):
         last_node = None
         for node in tree:
             if isinstance(node, ast.Function):
-                self.add_entry('function', node.name, last_node)
+                self.add_entry('function', to_funcname(node), last_node)
             elif isinstance(node, ast.Class):
                 self.add_entry('class', node.name, last_node)
 
                 if not is_private(last_node):
                     self._parse(node.nodes)
             elif isinstance(node, ast.Method):
-                self.add_entry('method', node.name, last_node)
+                self.add_entry('method', to_funcname(node), last_node)
 
             last_node = node
 
