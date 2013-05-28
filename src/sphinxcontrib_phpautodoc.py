@@ -121,6 +121,9 @@ class PHPAutodocDirective(Directive):
                     self._parse(node.nodes, indent + 1)
             elif isinstance(node, ast.Method):
                 self.add_entry('method', to_funcname(node), last_node, indent)
+            elif isinstance(node, ast.ClassVariables):
+                for variable in node.nodes:
+                    self.add_entry('attr', variable.name, last_node, indent)
 
             last_node = node
 
