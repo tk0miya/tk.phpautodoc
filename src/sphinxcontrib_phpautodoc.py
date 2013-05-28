@@ -53,7 +53,51 @@ def to_s(node):
     return ret
 
 
-class PHPAutodocDirective(Directive):
+def is_same_mtime(path1, path2):
+    try:
+        mtime1 = os.stat(path1).st_mtime
+        mtime2 = os.stat(path2).st_mtime
+
+        return mtime1 == mtime2
+    except:
+        return False
+
+
+def basename(path, ext=None):
+    filename = os.path.basename(path)
+    if ext:
+        basename, _ext = os.path.splitext(filename)
+        filename = "%s.%s" % (basename, ext)
+
+    return filename
+
+
+class AutodocCache(object):
+    def parse_code(self, filename):
+        import pickle
+        from phply.phplex import lexer
+        from phply.phpparse import parser
+
+        basedir = self.state.document.settings.env.doctreedir
+        cachename = os.path.join(basedir, basename(filename, 'parse'))
+        if is_same_mtime(filename, cachename):
+            tree = pickle.load(open(cachename, 'rb'))
+        else:
+            try:
+                with codecs.open(filename, 'r', 'utf-8') as f:
+                    tree = parser.parse(f.read(), lexer=lexer)
+
+                with open(cachename, 'wb') as f:
+                    pickle.dump(tree, f)
+                mtime = os.stat(filename).st_mtime
+                os.utime(cachename, (mtime, mtime))
+            except:
+                raise
+
+        return tree
+
+
+class PHPAutodocDirective(Directive, AutodocCache):
     has_content = False
     optional_arguments = 1
 
@@ -62,7 +106,8 @@ class PHPAutodocDirective(Directive):
 
         srcdir = self.state.document.settings.env.srcdir
         filename = os.path.join(srcdir, self.arguments[0])
-        self.parse(filename)
+        tree = self.parse_code(filename)
+        self.traverse(tree)
         self.state.document.settings.env.note_dependency(filename)
 
         node = nodes.paragraph()
@@ -101,16 +146,7 @@ class PHPAutodocDirective(Directive):
 
         self.add_line('')
 
-    def parse(self, filename):
-        try:
-            with codecs.open(filename, 'r', 'utf-8') as f:
-                tree = parser.parse(f.read(), lexer=lexer)
-
-            self._parse(tree)
-        except:
-            raise
-
-    def _parse(self, tree, indent=0):
+    def traverse(self, tree, indent=0):
         last_node = None
         for node in tree:
             if isinstance(node, ast.Function):
@@ -119,7 +155,7 @@ class PHPAutodocDirective(Directive):
                 self.add_entry('class', node.name, last_node, indent)
 
                 if not is_private_comment(last_node):
-                    self._parse(node.nodes, indent + 1)
+                    self.traverse(node.nodes, indent + 1)
             elif isinstance(node, ast.Method):
                 self.add_entry('method', to_s(node), last_node, indent)
             elif isinstance(node, ast.ClassVariables):
