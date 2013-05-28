@@ -30,6 +30,14 @@ def is_private_comment(comment):
     else:
         return False
 
+def comment2lines(node):
+    for line in node.text.splitlines():
+        if re.match('^\s*/?\*{1,2} ?', line):  # starts with '/**' or '/*' or '*' ?
+            line = re.sub('\s*\*/.*$', '', line)  # remove '*/' of tail
+            line = re.sub('^\s*/?\*{1,2} ?', '', line)  # remove '/**' or '/*' or '*' of top
+
+            yield line
+
 
 def to_s(node):
     if isinstance(node, ast.Constant):
@@ -97,12 +105,36 @@ class AutodocCache(object):
         return tree
 
 
-class PHPAutodocDirective(Directive, AutodocCache):
+class PHPDocWriter(object):
+    def add_line(self, line, indent_level=0):
+        if line:
+            indent = self.indent + u'   ' * indent_level
+            self.result.append(indent + line, '<phpautodoc>')
+        else:
+            self.result.append('', '<phpautodoc>')
+
+    def add_directive_header(self, directive, name, indent_level):
+        domain = getattr(self, 'domain', 'php')
+        self.add_line(u'.. %s:%s:: %s' % (domain, directive, name), indent_level)
+        self.add_line('')
+
+    def add_directive(self, directive, name, comment_node, indent_level=0):
+        if not is_private_comment(comment_node):
+            self.add_directive_header(directive, name, indent_level)
+
+            if is_comment(comment_node):
+                for line in comment2lines(comment_node):
+                    self.add_line(line, indent_level + 1)
+                self.add_line('')
+
+
+class PHPAutodocDirective(Directive, AutodocCache, PHPDocWriter):
     has_content = False
     optional_arguments = 1
 
     def run(self):
         self.result = ViewList()
+        self.indent = u''
 
         srcdir = self.state.document.settings.env.srcdir
         filename = os.path.join(srcdir, self.arguments[0])
@@ -116,51 +148,21 @@ class PHPAutodocDirective(Directive, AutodocCache):
 
         return node.children
 
-    def add_entry(self, directive, name, comment, indent):
-        if not is_private_comment(comment):
-            self.add_directive_header(directive, name, indent)
-            self.add_comment(comment, indent)
-
-    def add_line(self, line, level=0):
-        indent = u'   ' * level
-        self.result.append(indent + line, '<phpautodoc>')
-
-    def add_directive_header(self, directive, name, indent):
-        domain = getattr(self, 'domain', 'php')
-        self.add_line(u'.. %s:%s:: %s' % (domain, directive, name), indent)
-        self.add_line('')
-
-    def add_comment(self, comment, indent):
-        if not is_comment(comment):
-            return
-
-        for line in comment.text.splitlines():
-            if re.match('^\s*/?\*+ ?', line):  # starts with '/*' or '*' ?
-                line = re.sub('\s*\*/.*$', '', line)  # remove '*/' of tail
-                line = re.sub('^\s*/?\*+ ?', '', line)  # remove '/*' or '*' of top
-
-                if line:
-                    self.add_line(line, indent + 1)
-                else:
-                    self.add_line('')
-
-        self.add_line('')
-
     def traverse(self, tree, indent=0):
         last_node = None
         for node in tree:
             if isinstance(node, ast.Function):
-                self.add_entry('function', to_s(node), last_node, indent)
+                self.add_directive('function', to_s(node), last_node, indent)
             elif isinstance(node, ast.Class):
-                self.add_entry('class', node.name, last_node, indent)
+                self.add_directive('class', node.name, last_node, indent)
 
                 if not is_private_comment(last_node):
                     self.traverse(node.nodes, indent + 1)
             elif isinstance(node, ast.Method):
-                self.add_entry('method', to_s(node), last_node, indent)
+                self.add_directive('method', to_s(node), last_node, indent)
             elif isinstance(node, ast.ClassVariables):
                 for variable in node.nodes:
-                    self.add_entry('attr', variable.name, last_node, indent)
+                    self.add_directive('attr', variable.name, last_node, indent)
 
             last_node = node
 
