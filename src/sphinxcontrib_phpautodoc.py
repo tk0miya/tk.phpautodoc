@@ -24,7 +24,7 @@ def is_comment(node):
         return False
 
 
-def is_private(comment):
+def is_private_comment(comment):
     if is_comment(comment):
         return re.search('@access\s+private', comment.text)
     else:
@@ -72,7 +72,7 @@ class PHPAutodocDirective(Directive):
         return node.children
 
     def add_entry(self, directive, name, comment, indent):
-        if not is_private(comment):
+        if not is_private_comment(comment):
             self.add_directive_header(directive, name, indent)
             self.add_comment(comment, indent)
 
@@ -118,7 +118,7 @@ class PHPAutodocDirective(Directive):
             elif isinstance(node, ast.Class):
                 self.add_entry('class', node.name, last_node, indent)
 
-                if not is_private(last_node):
+                if not is_private_comment(last_node):
                     self._parse(node.nodes, indent + 1)
             elif isinstance(node, ast.Method):
                 self.add_entry('method', to_s(node), last_node, indent)
