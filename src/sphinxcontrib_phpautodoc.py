@@ -57,7 +57,6 @@ class PHPAutodocDirective(Directive):
     optional_arguments = 1
 
     def run(self):
-        self.indent = u''
         self.result = ViewList()
 
         srcdir = self.state.document.settings.env.srcdir
@@ -71,20 +70,21 @@ class PHPAutodocDirective(Directive):
 
         return node.children
 
-    def add_entry(self, directive, name, comment):
+    def add_entry(self, directive, name, comment, indent):
         if not is_private(comment):
-            self.add_directive_header(directive, name)
-            self.add_comment(comment)
+            self.add_directive_header(directive, name, indent)
+            self.add_comment(comment, indent)
 
-    def add_line(self, line, *lineno):
-        self.result.append(self.indent + line, '<phpautodoc>', *lineno)
+    def add_line(self, line, level=0):
+        indent = u'   ' * level
+        self.result.append(indent + line, '<phpautodoc>')
 
-    def add_directive_header(self, directive, name):
+    def add_directive_header(self, directive, name, indent):
         domain = getattr(self, 'domain', 'php')
-        self.add_line(u'.. %s:%s:: %s' % (domain, directive, name))
+        self.add_line(u'.. %s:%s:: %s' % (domain, directive, name), indent)
         self.add_line('')
 
-    def add_comment(self, comment):
+    def add_comment(self, comment, indent):
         if not is_comment(comment):
             return
 
@@ -94,7 +94,7 @@ class PHPAutodocDirective(Directive):
                 line = re.sub('^\s*/?\*+ ?', '', line)  # remove '/*' or '*' of top
 
                 if line:
-                    self.add_line(u'  ' + line)
+                    self.add_line(line, indent + 1)
                 else:
                     self.add_line('')
 
@@ -109,18 +109,18 @@ class PHPAutodocDirective(Directive):
         except:
             raise
 
-    def _parse(self, tree):
+    def _parse(self, tree, indent=0):
         last_node = None
         for node in tree:
             if isinstance(node, ast.Function):
-                self.add_entry('function', to_funcname(node), last_node)
+                self.add_entry('function', to_funcname(node), last_node, indent)
             elif isinstance(node, ast.Class):
-                self.add_entry('class', node.name, last_node)
+                self.add_entry('class', node.name, last_node, indent)
 
                 if not is_private(last_node):
-                    self._parse(node.nodes)
+                    self._parse(node.nodes, indent + 1)
             elif isinstance(node, ast.Method):
-                self.add_entry('method', to_funcname(node), last_node)
+                self.add_entry('method', to_funcname(node), last_node, indent)
 
             last_node = node
 
