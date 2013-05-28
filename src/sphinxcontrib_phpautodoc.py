@@ -31,25 +31,23 @@ def is_private(comment):
         return False
 
 
-def to_funcname(function):
-    if function.params is None:
-        funcname = function.name
+def to_s(node):
+    if isinstance(node, ast.Constant):
+        ret = node.name
+    elif isinstance(node, ast.FormalParameter):
+        ret = node.name
+        if node.default:
+            ret += ' = %s' % to_s(node.default)
+    elif isinstance(node, (ast.Function, ast.Method)):
+        if node.params is None:
+            ret = node.name
+        else:
+            params = (to_s(p) for p in node.params)
+            ret = "%s(%s)" % (node.name, ", ".join(params))
     else:
-        params = []
-        for param in function.params:
-            label = param.name
-            if param.default:
-                value = param.default
-                if isinstance(value, ast.Constant):
-                    label += ' = %s' % value.name
-                else:
-                    label += ' = %s' % value
+        ret = str(node)
 
-            params.append(label)
-
-        funcname = "%s(%s)" % (function.name, ", ".join(params))
-
-    return funcname
+    return ret
 
 
 class PHPAutodocDirective(Directive):
@@ -113,14 +111,14 @@ class PHPAutodocDirective(Directive):
         last_node = None
         for node in tree:
             if isinstance(node, ast.Function):
-                self.add_entry('function', to_funcname(node), last_node, indent)
+                self.add_entry('function', to_s(node), last_node, indent)
             elif isinstance(node, ast.Class):
                 self.add_entry('class', node.name, last_node, indent)
 
                 if not is_private(last_node):
                     self._parse(node.nodes, indent + 1)
             elif isinstance(node, ast.Method):
-                self.add_entry('method', to_funcname(node), last_node, indent)
+                self.add_entry('method', to_s(node), last_node, indent)
             elif isinstance(node, ast.ClassVariables):
                 for variable in node.nodes:
                     self.add_entry('attr', variable.name, last_node, indent)
