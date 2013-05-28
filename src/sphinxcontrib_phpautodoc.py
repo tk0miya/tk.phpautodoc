@@ -34,6 +34,9 @@ def is_private(comment):
 def to_s(node):
     if isinstance(node, ast.Constant):
         ret = node.name
+    elif isinstance(node, ast.Array):
+        elems = (to_s(n) for n in node.nodes)
+        ret = "array(%s)" % ", ".join(elems)
     elif isinstance(node, ast.FormalParameter):
         ret = node.name
         if node.default:
