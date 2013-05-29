@@ -105,7 +105,11 @@ class AutodocCache(object):
         return tree
 
 
-class PHPDocWriter(object):
+class PHPDocWriter(Directive):
+    def run(self):
+        self.result = ViewList()
+        self.indent = u''
+
     def add_line(self, line, indent_level=0):
         if line:
             indent = self.indent + u'   ' * indent_level
@@ -128,14 +132,11 @@ class PHPDocWriter(object):
                 self.add_line('')
 
 
-class PHPAutodocDirective(Directive, AutodocCache, PHPDocWriter):
+class PHPAutodocDirective(PHPDocWriter, AutodocCache):
     has_content = False
     optional_arguments = 1
 
     def run(self):
-        self.result = ViewList()
-        self.indent = u''
-
         srcdir = self.state.document.settings.env.srcdir
         filename = os.path.join(srcdir, self.arguments[0])
         tree = self.parse_code(filename)
