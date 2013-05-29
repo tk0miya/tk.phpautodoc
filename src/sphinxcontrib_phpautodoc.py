@@ -13,6 +13,7 @@ from phply import phpast as ast
 from phply.phplex import lexer
 from phply.phpparse import parser
 from docutils import nodes
+from docutils.parsers import rst
 from docutils.parsers.rst import Directive
 from docutils.statemachine import ViewList
 
@@ -106,6 +107,10 @@ class AutodocCache(object):
 
 
 class PHPDocWriter(Directive):
+    option_spec = {
+        'undoc-members': rst.directives.flag,
+    }
+
     def run(self):
         self.result = ViewList()
         self.indent = u''
@@ -123,7 +128,9 @@ class PHPDocWriter(Directive):
         self.add_line('')
 
     def add_directive(self, directive, name, comment_node, indent_level=0):
-        if not is_private_comment(comment_node):
+        if is_private_comment(comment_node):
+            pass  # skipped
+        elif is_comment(comment_node) or 'undoc-members' in self.options:
             self.add_directive_header(directive, name, indent_level)
 
             if is_comment(comment_node):
@@ -132,16 +139,34 @@ class PHPDocWriter(Directive):
                 self.add_line('')
 
 
-class PHPAutodocDirective(PHPDocWriter, AutodocCache):
-    has_content = False
-    optional_arguments = 1
+class PHPAutodocDirectiveBase(PHPDocWriter, AutodocCache):
+    directive_name = "phpautodoc"
+
+    option_spec = {
+        'filename': rst.directives.unchanged,
+        'members': rst.directives.flag,
+        'undoc-members': rst.directives.flag,
+    }
 
     def run(self):
+        super(PHPAutodocDirectiveBase, self).run()
+
+        if 'filename' not in self.options:
+            msg = '%s requires :filename: option' % self.directive_name
+            return [self.state.document.reporter.warning(msg, line=self.lineno)]
+
         srcdir = self.state.document.settings.env.srcdir
-        filename = os.path.join(srcdir, self.arguments[0])
+        filename = os.path.join(srcdir, self.options['filename'])
+        if not os.path.exists(filename):
+            msg = '%s cannot read source code:' % (self.directive_name, self.options['filename'])
+            return [self.state.document.reporter.warning(msg, line=self.lineno)]
+
         tree = self.parse_code(filename)
         self.traverse(tree)
         self.state.document.settings.env.note_dependency(filename)
+
+        for line in self.content:
+            self.add_line(line, 1)
 
         node = nodes.paragraph()
         node.document = self.state.document
@@ -150,15 +175,21 @@ class PHPAutodocDirective(PHPDocWriter, AutodocCache):
         return node.children
 
     def traverse(self, tree, indent=0):
+        pass
+
+    def traverse_all(self, tree, indent=0):
         last_node = None
         for node in tree:
             if isinstance(node, ast.Function):
                 self.add_directive('function', to_s(node), last_node, indent)
             elif isinstance(node, ast.Class):
-                self.add_directive('class', node.name, last_node, indent)
+                if is_private_comment(last_node):
+                    pass
+                else:
+                    self.add_directive('class', node.name, last_node, indent)
 
-                if not is_private_comment(last_node):
-                    self.traverse(node.nodes, indent + 1)
+                    if 'members' in self.options:
+                        self.traverse_all(node.nodes, indent + 1)
             elif isinstance(node, ast.Method):
                 self.add_directive('method', to_s(node), last_node, indent)
             elif isinstance(node, ast.ClassVariables):
@@ -168,5 +199,32 @@ class PHPAutodocDirective(PHPDocWriter, AutodocCache):
             last_node = node
 
 
+class PHPAutoModuleDirective(PHPAutodocDirectiveBase):
+    directive_name = "phpautomodule"
+
+    def traverse(self, tree, indent=0):
+        self.traverse_all(tree, indent)
+
+
+class PHPAutoClassDirective(PHPAutodocDirectiveBase):
+    has_content = True
+    required_arguments = 1
+    directive_name = "phpautoclass"
+
+    def run(self):
+        self.targets = [t.strip() for t in self.arguments[0].split(',')]
+        return super(PHPAutoClassDirective, self).run()
+
+    def traverse(self, tree, indent=0):
+        last_node = None
+        for node in tree:
+            if isinstance(node, ast.Class) and node.name in self.targets:
+                self.traverse_all([last_node, node])
+
+            last_node = node
+
+
 def setup(app): 
-    app.add_directive('phpautodoc', PHPAutodocDirective)
+    classes = [PHPAutoModuleDirective, PHPAutoClassDirective]
+    for cls in classes:
+        app.add_directive(cls.directive_name, cls)
