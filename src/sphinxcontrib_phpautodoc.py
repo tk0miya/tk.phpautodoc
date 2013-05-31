@@ -190,6 +190,14 @@ class PHPAutodocDirectiveBase(PHPDocWriter, AutodocCache):
 
                     if 'members' in self.options:
                         self.traverse_all(node.nodes, indent + 1)
+            elif isinstance(node, ast.Interface):
+                if is_private_comment(last_node):
+                    pass
+                else:
+                    self.add_directive('interface', node.name, last_node, indent)
+
+                    if 'members' in self.options:
+                        self.traverse_all(node.nodes, indent + 1)
             elif isinstance(node, ast.Method):
                 self.add_directive('method', to_s(node), last_node, indent)
             elif isinstance(node, ast.ClassVariables):
@@ -218,7 +226,7 @@ class PHPAutoClassDirective(PHPAutodocDirectiveBase):
     def traverse(self, tree, indent=0):
         last_node = None
         for node in tree:
-            if isinstance(node, ast.Class) and node.name in self.targets:
+            if (isinstance(node, ast.Class) or isinstance(node, ast.Interface)) and node.name in self.targets:
                 self.traverse_all([last_node, node])
 
             last_node = node
