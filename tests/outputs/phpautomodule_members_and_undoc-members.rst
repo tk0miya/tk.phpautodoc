@@ -11,3 +11,11 @@
 
    here is docs for Hello class
 
+
+   .. php:method:: world($message = null)
+
+
+      here is docs for world method
+
+
+   .. php:method:: world_undoc($message = null)
