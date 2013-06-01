@@ -31,6 +31,7 @@ def is_private_comment(comment):
     else:
         return False
 
+
 def comment2lines(node):
     for line in node.text.splitlines():
         if re.match('^\s*/?\*{1,2} ?', line):  # starts with '/**' or '/*' or '*' ?
@@ -232,7 +233,7 @@ class PHPAutoClassDirective(PHPAutodocDirectiveBase):
             last_node = node
 
 
-def setup(app): 
+def setup(app):
     classes = [PHPAutoModuleDirective, PHPAutoClassDirective]
     for cls in classes:
         app.add_directive(cls.directive_name, cls)
