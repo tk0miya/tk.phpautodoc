@@ -159,7 +159,7 @@ class PHPAutodocDirectiveBase(PHPDocWriter, AutodocCache):
         srcdir = self.state.document.settings.env.srcdir
         filename = os.path.join(srcdir, self.options['filename'])
         if not os.path.exists(filename):
-            msg = '%s cannot read source code:' % (self.directive_name, self.options['filename'])
+            msg = '%s cannot read source code: %s' % (self.directive_name, self.options['filename'])
             return [self.state.document.reporter.warning(msg, line=self.lineno)]
 
         tree = self.parse_code(filename)
