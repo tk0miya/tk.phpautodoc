@@ -21,4 +21,9 @@ setup(
          'ply',
          'sphinxcontrib-phpdomain',
      ),
+     extras_require=dict(
+         test=[
+             'mock'
+         ]
+     ),
 )
