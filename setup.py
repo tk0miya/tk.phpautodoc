@@ -6,8 +6,9 @@ import pkg_resources
 
 setup(
      name='tk.phpautodoc',
-     version='0.0.4',
+     version='1.0.0',
      description='sample implementation of phpdocumentor using sphinx',
+     long_description=open('README.txt').read(),
      author='Takeshi Komiya',
      author_email='i.tkomiya at gmail.com',
      url='https://bitbucket.org/tk0miya/tk0.phpdoc',
@@ -18,5 +19,6 @@ setup(
      include_package_data=True,
      install_requires=(
          'ply',
+         'sphinxcontrib-phpdomain',
      ),
 )
