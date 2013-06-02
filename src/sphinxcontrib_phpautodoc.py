@@ -167,11 +167,15 @@ class PHPAutodocDirectiveBase(PHPDocWriter, AutodocCache):
 
         tree = self.parse_code(filename)
         self.traverse(tree)
-        self.add_line('')
         self.state.document.settings.env.note_dependency(filename)
 
-        for line in self.content:
-            self.add_line(line, 1)
+        if self.content:
+            for line in self.content:
+                self.add_line(line, 1)
+
+            self.add_line('')
+
+        self.add_line('')
 
         node = nodes.paragraph()
         node.document = self.state.document
