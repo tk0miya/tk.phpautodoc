@@ -1,4 +1,4 @@
 .. phpautoclass:: Hello
-   :filename: inputs/classes.php
+   :filename: inputs/class.php
    :members:
    :undoc-members:

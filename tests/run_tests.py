@@ -55,14 +55,21 @@ class TestPHPAutodoc(unittest.TestCase):
             expected = open(expected_file_for(name)).read()
             self.assertEqual(results, expected)
 
-        funcname = "test_%s" % re.sub('[\.\-]', '_', name, re.M)
+        funcname = "test_%s" % re.sub('[\.\-/]', '_', name, re.M)
         test_runner.__name__ = funcname
         setattr(cls, funcname, test_runner)
 
 
-for filename in os.listdir(test_path_join('inputs')):
-    if filename[-4:] == ".rst":
-        TestPHPAutodoc.add_testcase(filename)
+def add_testcase(arg, dirname, fnames):
+    dirname = re.sub('.*?inputs/?', '', dirname)
+    for filename in fnames:
+        if filename[-4:] == ".rst":
+            path = os.path.join(dirname, filename)
+            TestPHPAutodoc.add_testcase(path)
+
+
+# build up testcases
+os.path.walk(test_path_join('inputs'), add_testcase, None)
 
 
 if __name__ == "__main__":
