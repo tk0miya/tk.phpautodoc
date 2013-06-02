@@ -34,4 +34,3 @@ class Hello {
   private $attr5;
 }
 ?>
-
