@@ -209,10 +209,16 @@ class PHPAutodocDirectiveBase(PHPDocWriter, AutodocCache):
                     if 'members' in self.options:
                         self.traverse_all(node.nodes, indent + 1)
             elif isinstance(node, ast.Method):
-                self.add_directive('method', to_s(node), last_node, indent)
+                if 'protected' in node.modifiers or 'private' in node.modifiers:
+                    pass
+                else:
+                    self.add_directive('method', to_s(node), last_node, indent)
             elif isinstance(node, ast.ClassVariables):
-                for variable in node.nodes:
-                    self.add_directive('attr', variable.name, last_node, indent)
+                if 'protected' in node.modifiers or 'private' in node.modifiers:
+                    pass
+                else:
+                    for variable in node.nodes:
+                        self.add_directive('attr', variable.name, last_node, indent)
 
             last_node = node
 
