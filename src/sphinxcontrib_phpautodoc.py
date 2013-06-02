@@ -131,10 +131,11 @@ class PHPDocWriter(Directive):
         self.add_line(u'.. %s:%s:: %s' % (domain, directive, name), indent_level)
         self.add_line('')
 
-    def add_directive(self, directive, name, comment_node, indent_level=0):
+    def add_directive(self, directive, name, comment_node, indent_level=0, force=False):
         if is_private_comment(comment_node):
-            pass  # skipped
-        elif is_comment(comment_node) or 'undoc-members' in self.options:
+            if force is True:
+                self.add_directive_header(directive, name, indent_level)
+        elif is_comment(comment_node) or 'undoc-members' in self.options or force is True:
             self.add_directive_header(directive, name, indent_level)
 
             if is_comment(comment_node):
@@ -235,8 +236,16 @@ class PHPAutoClassDirective(PHPAutodocDirectiveBase):
     def traverse(self, tree, indent=0):
         last_node = None
         for node in tree:
-            if (isinstance(node, ast.Class) or isinstance(node, ast.Interface)) and node.name in self.targets:
-                self.traverse_all([last_node, node])
+            if isinstance(node, ast.Class) and node.name in self.targets:
+                self.add_directive('class', node.name, last_node, indent, force=True)
+
+                if 'members' in self.options:
+                    self.traverse_all(node.nodes, indent + 1)
+            elif isinstance(node, ast.Interface) and node.name in self.targets:
+                self.add_directive('interface', node.name, last_node, indent, force=True)
+
+                if 'members' in self.options:
+                    self.traverse_all(node.nodes, indent + 1)
 
             last_node = node
 
