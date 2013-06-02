@@ -15,6 +15,11 @@ class Hello {
   }
   private function private_world($name) {
   }
+  /**
+   * @access private
+   */
+  public function private_access_world($name) {
+  }
 
   /**
    * here is docs for $attr1 attribute
@@ -23,6 +28,10 @@ class Hello {
   public $attr2;
   protected $attr3;
   private $attr4;
+  /**
+   * @access private
+   */
+  private $attr5;
 }
 ?>
 
