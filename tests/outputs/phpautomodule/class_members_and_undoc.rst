@@ -8,9 +8,7 @@
 
    .. php:method:: undoc_world($name)
 
-   .. php:method:: protected_world($name)
-
-   .. php:method:: private_world($name)
+   .. php:method:: no_modifiers_world($name)
 
    .. php:attr:: $attr1
 
@@ -18,7 +16,5 @@
 
    .. php:attr:: $attr2
 
-   .. php:attr:: $attr3
-
-   .. php:attr:: $attr4
+   .. php:attr:: $attr6
 

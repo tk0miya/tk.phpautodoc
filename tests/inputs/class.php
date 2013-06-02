@@ -20,6 +20,8 @@ class Hello {
    */
   public function private_access_world($name) {
   }
+  function no_modifiers_world($name) {
+  }
 
   /**
    * here is docs for $attr1 attribute
@@ -32,5 +34,6 @@ class Hello {
    * @access private
    */
   private $attr5;
+  var $attr6;
 }
 ?>
