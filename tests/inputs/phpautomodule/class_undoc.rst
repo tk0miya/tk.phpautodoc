@@ -1,3 +1,3 @@
 .. phpautomodule::
-   :filename: inputs/hello.php
+   :filename: inputs/class.php
    :undoc-members:
