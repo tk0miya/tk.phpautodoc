@@ -9,5 +9,10 @@ interface IHello {
    */
   public function doc_world($name);
   public function undoc_world($name);
+  /**
+   * @access private
+   */
+  public function private_access_world($name) {
+  }
 }
 ?>
