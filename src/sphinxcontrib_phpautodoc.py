@@ -33,12 +33,15 @@ def is_private_comment(comment):
 
 
 def comment2lines(node):
+    comments = []
     for line in node.text.splitlines():
         if re.match('^\s*/?\*{1,2} ?', line):  # starts with '/**' or '/*' or '*' ?
             line = re.sub('\s*\*/.*$', '', line)  # remove '*/' of tail
             line = re.sub('^\s*/?\*{1,2} ?', '', line)  # remove '/**' or '/*' or '*' of top
 
-            yield line
+            comments.append(line)
+
+    return "\n".join(comments).strip().splitlines()
 
 
 def to_s(node):
@@ -164,6 +167,7 @@ class PHPAutodocDirectiveBase(PHPDocWriter, AutodocCache):
 
         tree = self.parse_code(filename)
         self.traverse(tree)
+        self.add_line('')
         self.state.document.settings.env.note_dependency(filename)
 
         for line in self.content:
