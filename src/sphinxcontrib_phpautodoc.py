@@ -98,7 +98,7 @@ class AutodocCache(object):
         else:
             try:
                 with codecs.open(filename, 'r', 'utf-8') as f:
-                    tree = parser.parse(f.read(), lexer=lexer)
+                    tree = parser.parse(f.read(), lexer=lexer.clone())
 
                 with open(cachename, 'wb') as f:
                     pickle.dump(tree, f)

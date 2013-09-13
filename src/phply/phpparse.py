@@ -646,9 +646,9 @@ def p_parameter(p):
         p[0] = ast.FormalParameter(p[1], None, False, None, lineno=p.lineno(1))
     elif len(p) == 3 and p[1] == '&': # AND VARIABLE
         p[0] = ast.FormalParameter(p[2], None, True, None, lineno=p.lineno(1))
-    elif len(p) == 3 and p[1] != '&': # STRING VARIABLE 
+    elif len(p) == 3 and p[1] != '&': # STRING VARIABLE
         p[0] = ast.FormalParameter(p[2], None, False, p[1], lineno=p.lineno(1))
-    elif len(p) == 4 and p[2] != '&': # VARIABLE EQUALS static_scalar 
+    elif len(p) == 4 and p[2] != '&': # VARIABLE EQUALS static_scalar
         p[0] = ast.FormalParameter(p[1], p[3], False, None, lineno=p.lineno(1))
     elif len(p) == 4 and p[2] == '&': # STRING AND VARIABLE
         p[0] = ast.FormalParameter(p[3], None, True, p[1], lineno=p.lineno(1))
