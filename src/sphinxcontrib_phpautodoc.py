@@ -51,7 +51,14 @@ def to_s(node):
         elems = (to_s(n) for n in node.nodes)
         ret = "array(%s)" % ", ".join(elems)
     elif isinstance(node, ast.FormalParameter):
-        ret = node.name
+        ret = ""
+        if node.type:
+            ret += "%s " % to_s(node.type)
+        if node.is_ref:
+            ret += "&"
+
+        ret += "%s" % node.name
+
         if node.default:
             ret += ' = %s' % to_s(node.default)
     elif isinstance(node, (ast.Function, ast.Method)):
