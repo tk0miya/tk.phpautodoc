@@ -170,23 +170,27 @@ class PHPAutodocDirectiveBase(PHPDocWriter, AutodocCache):
             msg = '%s cannot read source code: %s' % (self.directive_name, self.options['filename'])
             return [self.state.document.reporter.warning(msg, line=self.lineno)]
 
-        tree = self.parse_code(filename)
-        self.traverse(tree)
-        self.state.document.settings.env.note_dependency(filename)
+        try:
+            tree = self.parse_code(filename)
+            self.traverse(tree)
+            self.state.document.settings.env.note_dependency(filename)
 
-        if self.content:
-            for line in self.content:
-                self.add_line(line, 1)
+            if self.content:
+                for line in self.content:
+                    self.add_line(line, 1)
+
+                self.add_line('')
 
             self.add_line('')
 
-        self.add_line('')
+            node = nodes.paragraph()
+            node.document = self.state.document
+            self.state.nested_parse(self.result, 0, node)
 
-        node = nodes.paragraph()
-        node.document = self.state.document
-        self.state.nested_parse(self.result, 0, node)
-
-        return node.children
+            return node.children
+        except SyntaxError as exc:
+            msg = 'phpautodoc parse error [%s]: %s' % (filename, exc)
+            return [self.state_machine.reporter.warning(msg, line=self.lineno)]
 
     def traverse(self, tree, indent=0):
         pass

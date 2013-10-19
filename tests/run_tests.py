@@ -2,8 +2,10 @@
 
 import os
 import re
+import sys
 import shutil
 import unittest
+from cStringIO import StringIO
 from mock import Mock, patch
 from tempfile import mkdtemp
 from docutils.parsers.rst import Parser
@@ -37,6 +39,17 @@ class TestPHPAutodoc(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.settings.env.doctreedir)
+
+    def test_syntax_error(self):
+        try:
+            orig_stderr = sys.stderr
+            sys.stderr = StringIO()
+
+            doc = new_document('<test>', self.settings)
+            src = ".. phpautomodule::\n   :filename: inputs/syntax_error.php\n"
+            self.parser.parse(src, doc)
+        finally:
+            sys.stderr = orig_stderr
 
     @classmethod
     def append(cls, name):
