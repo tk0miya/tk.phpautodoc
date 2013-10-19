@@ -9,6 +9,7 @@
 import os
 import re
 import codecs
+import pickle
 from phply import phpast as ast
 from phply.phplex import lexer
 from phply.phpparse import parser
@@ -94,10 +95,6 @@ def basename(path, ext=None):
 
 class AutodocCache(object):
     def parse_code(self, filename):
-        import pickle
-        from phply.phplex import lexer
-        from phply.phpparse import parser
-
         basedir = self.state.document.settings.env.doctreedir
         cachename = os.path.join(basedir, basename(filename, 'parse'))
         if is_same_mtime(filename, cachename):
