@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-    sphinxcontrib_wikitable
-    ~~~~~~~~~~~~~~~~~~~~~~~~
+    sphinxcontrib_phpautodoc
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    :copyright: Copyright 2012 by Takeshi KOMIYA
-    :license: BSD, see LICENSE for details.
+    :copyright: Copyright 2013 by Takeshi KOMIYA
+    :license: Apache 2.0, see LICENSE for details.
 """
 import os
 import re
