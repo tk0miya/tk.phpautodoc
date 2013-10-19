@@ -263,7 +263,32 @@ class PHPAutoClassDirective(PHPAutodocDirectiveBase):
             last_node = node
 
 
+class PHPAutoFunctionDirective(PHPAutodocDirectiveBase):
+    has_content = True
+    required_arguments = 1
+    directive_name = "phpautofunction"
+
+    option_spec = {
+        'filename': rst.directives.unchanged,
+    }
+
+    def run(self):
+        self.targets = [t.strip() for t in self.arguments[0].split(',')]
+        return super(PHPAutoFunctionDirective, self).run()
+
+    def traverse(self, tree, indent=0):
+        last_node = None
+        for node in tree:
+            if isinstance(node, ast.Function) and node.name in self.targets:
+                self.add_directive('function', to_s(node), last_node, indent, force=True)
+                break
+
+            last_node = node
+
+
 def setup(app):
-    classes = [PHPAutoModuleDirective, PHPAutoClassDirective]
+    classes = [PHPAutoModuleDirective,
+               PHPAutoClassDirective,
+               PHPAutoFunctionDirective]
     for cls in classes:
         app.add_directive(cls.directive_name, cls)
