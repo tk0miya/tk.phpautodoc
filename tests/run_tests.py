@@ -5,7 +5,6 @@ import re
 import shutil
 import unittest
 from mock import Mock, patch
-from functools import wraps
 from tempfile import mkdtemp
 from docutils.parsers.rst import Parser
 from docutils.frontend import OptionParser
@@ -14,14 +13,13 @@ from sphinx.application import Sphinx
 from sphinx.config import Config
 import sphinxcontrib_phpautodoc as phpautodoc
 
+TESTDIR = os.path.dirname(__file__)
+
 
 class FakeSphinx(Sphinx):
     def __init__(self):
-        self.config = Config(None, None, None, None)
-
-
-def test_path_join(*args):
-    return os.path.join(os.path.dirname(__file__), *args)
+        self.config = Config(None, None, {}, None)
+        self.verbosity = 0
 
 
 class TestPHPAutodoc(unittest.TestCase):
@@ -41,37 +39,31 @@ class TestPHPAutodoc(unittest.TestCase):
         shutil.rmtree(self.settings.env.doctreedir)
 
     @classmethod
-    def add_testcase(cls, name):
-        input_file_for = lambda filename: test_path_join('inputs', filename)
-        expected_file_for = lambda filename: test_path_join('outputs', filename)
-
+    def append(cls, name):
         @patch("sphinxcontrib_phpautodoc.ViewList")
-        def test_runner(self, ViewList):
+        def testcase(self, ViewList):
             doc = new_document('<test>', self.settings)
-            src = open(input_file_for(name)).read()
+            src = open(os.path.join(TESTDIR, 'inputs', name)).read()
             self.parser.parse(src, doc)
 
             results = "\n".join(args[0][0] for args in ViewList().append.call_args_list)
-            expected = open(expected_file_for(name)).read()
+            expected = open(os.path.join(TESTDIR, 'outputs', name)).read()
             self.assertEqual(results, expected)
 
         funcname = "test_%s" % re.sub('[\.\-/]', '_', name, re.M)
-        test_runner.__name__ = funcname
-        setattr(cls, funcname, test_runner)
+        testcase.__name__ = funcname
+        setattr(cls, funcname, testcase)
 
 
-def add_testcase(arg, dirname, fnames):
-    dirname = re.sub('.*?inputs/?', '', dirname)
-    for filename in fnames:
-        if filename[-4:] == ".rst":
+# setup testcases
+for root, dirs, files in os.walk(os.path.join(TESTDIR, 'inputs')):
+    dirname = re.sub('.*?inputs/?', '', root)
+    for filename in files:
+        if filename[-4:] == '.rst':
             path = os.path.join(dirname, filename)
-            TestPHPAutodoc.add_testcase(path)
-
-
-# build up testcases
-os.path.walk(test_path_join('inputs'), add_testcase, None)
+            TestPHPAutodoc.append(path)
 
 
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(TestPHPAutodoc)
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.TextTestRunner(verbosity=1).run(suite)
