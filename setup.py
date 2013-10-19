@@ -11,7 +11,7 @@ setup(
      long_description=open('README.txt').read(),
      author='Takeshi Komiya',
      author_email='i.tkomiya at gmail.com',
-     url='https://bitbucket.org/tk0miya/tk0.phpdoc',
+     url='https://bitbucket.org/tk0miya/tk.phpautodoc',
      license='Apache License 2.0',
      py_modules=['sphinxcontrib_phpautodoc'],
      packages=find_packages('src'),
