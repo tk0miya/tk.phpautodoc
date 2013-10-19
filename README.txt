@@ -53,6 +53,17 @@ phpautoclass
          :undoc-members:
 
 
+phpautofunction
+
+   phpautofunction works like autofunction directive in sphinx.ext.autodoc.
+   It parses .php file, and then pick up functions to your docs.
+
+   ex::
+
+      .. phpautofunction:: my_function
+         :filename: path/to/source_code.php
+
+
 LICENSE
 =======
 Apache License 2.0
