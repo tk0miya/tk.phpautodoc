@@ -1,7 +1,10 @@
-.installed.cfg
 .pyc
 .swp
-bin/
-dist/
-develop-eggs/
-src/.*.egg-info
+^.installed.cfg
+^.tox
+^bin/
+^develop-eggs/
+^dist/
+^eggs/
+^parts/
+^src/.*.egg-info
