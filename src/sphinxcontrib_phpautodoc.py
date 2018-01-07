@@ -80,7 +80,7 @@ def is_same_mtime(path1, path2):
         mtime2 = os.stat(path2).st_mtime
 
         return mtime1 == mtime2
-    except:
+    except Exception:
         return False
 
 
@@ -108,7 +108,7 @@ class AutodocCache(object):
                     pickle.dump(tree, f)
                 mtime = os.stat(filename).st_mtime
                 os.utime(cachename, (mtime, mtime))
-            except:
+            except Exception:
                 raise
 
         return tree
