@@ -21,6 +21,7 @@ setup(
          'Sphinx',
          'ply',
          'sphinxcontrib-phpdomain',
+         'six',
      ),
      extras_require=dict(
          test=[
