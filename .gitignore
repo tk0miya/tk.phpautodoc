@@ -1,0 +1,14 @@
+*.pyc
+*.egg
+*.so
+*.swp
+
+.cache/
+.mypy_cache/
+.tags
+.tox
+.coverage
+.DS_Store
+
+build/
+dist/
