@@ -22,6 +22,7 @@ class FakeSphinx(Sphinx):
     def __init__(self):
         self.config = Config(None, None, {}, None)
         self.verbosity = 0
+        self._setting_up_extension = ['']
 
 
 class TestPHPAutodoc(unittest.TestCase):
