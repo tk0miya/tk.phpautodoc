@@ -12,7 +12,7 @@ import codecs
 import pickle
 from phply import phpast as ast
 from phply.phplex import lexer
-from phply.phpparse import parser
+from phply.phpparse import make_parser
 from docutils import nodes
 from docutils.parsers import rst
 from docutils.parsers.rst import Directive
@@ -102,7 +102,7 @@ class AutodocCache(object):
         else:
             try:
                 with codecs.open(filename, 'r', 'utf-8') as f:
-                    tree = parser.parse(f.read(), lexer=lexer.clone())
+                    tree = make_parser().parse(f.read(), lexer=lexer.clone())
 
                 with open(cachename, 'wb') as f:
                     pickle.dump(tree, f)

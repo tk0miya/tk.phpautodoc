@@ -1,3 +1,6 @@
+# This file is from https://github.com/viraptor/phply/
+# -----------------------------------------------------------------------------
+#
 # Copyright (c) 2010 by Dave Benjamin and contributors.  See AUTHORS
 # for more details.
 #
@@ -6,7 +9,7 @@
 # Redistribution and use in source and binary forms of the software as well
 # as documentation, with or without modification, are permitted provided
 # that the following conditions are met:
-#
+# 
 # * Redistributions of source code must retain the above copyright
 #   notice, this list of conditions and the following disclaimer.
 #
@@ -31,5 +34,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE AND DOCUMENTATION, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 # DAMAGE.
+
+
 
 __import__('pkg_resources').declare_namespace(__name__)
