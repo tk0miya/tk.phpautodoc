@@ -19,3 +19,4 @@ __pycache__/
 .installed.cfg
 env/
 tk.phpautodoc.egg-info/
+src/phply/parsetab.py
