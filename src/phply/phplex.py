@@ -3,9 +3,9 @@
 #
 # A lexer for PHP.
 #
-# This file is from https://github.com/ramen/phply
+# This file is from https://github.com/viraptor/phply/
 # And a little modified by @tk0miya
-# ----------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 #
 # Copyright (c) 2010 by Dave Benjamin and contributors.  See AUTHORS
 # for more details.
@@ -15,7 +15,7 @@
 # Redistribution and use in source and binary forms of the software as well
 # as documentation, with or without modification, are permitted provided
 # that the following conditions are met:
-#
+# 
 # * Redistributions of source code must retain the above copyright
 #   notice, this list of conditions and the following disclaimer.
 #
@@ -41,12 +41,10 @@
 # SOFTWARE AND DOCUMENTATION, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 # DAMAGE.
 
+
 import ply.lex as lex
 import re
 
-# todo: nowdocs
-# todo: backticks
-# todo: binary string literals and casts
 # todo: BAD_CHARACTER
 # todo: <script> syntax (does anyone use this?)
 
@@ -59,18 +57,22 @@ states = (
     ('property', 'exclusive'),
     ('heredoc', 'exclusive'),
     ('heredocvar', 'exclusive'),
+    ('nowdoc', 'exclusive'),
+    ('backticked', 'exclusive'),
+    ('backtickedvar', 'exclusive'),
 )
 
 # Reserved words
 reserved = (
     'ARRAY', 'AS', 'BREAK', 'CASE', 'CLASS', 'CONST', 'CONTINUE', 'DECLARE',
-    'DEFAULT', 'DO', 'ECHO', 'ELSE', 'ELSEIF', 'EMPTY', 'ENDDECLARE',
+    'DEFAULT', 'DIE', 'DO', 'ECHO', 'ELSE', 'ELSEIF', 'EMPTY', 'ENDDECLARE',
     'ENDFOR', 'ENDFOREACH', 'ENDIF', 'ENDSWITCH', 'ENDWHILE', 'EVAL', 'EXIT',
     'EXTENDS', 'FOR', 'FOREACH', 'FUNCTION', 'GLOBAL', 'IF', 'INCLUDE',
     'INCLUDE_ONCE', 'INSTANCEOF', 'ISSET', 'LIST', 'NEW', 'PRINT', 'REQUIRE',
     'REQUIRE_ONCE', 'RETURN', 'STATIC', 'SWITCH', 'UNSET', 'USE', 'VAR',
     'WHILE', 'FINAL', 'INTERFACE', 'IMPLEMENTS', 'PUBLIC', 'PRIVATE',
     'PROTECTED', 'ABSTRACT', 'CLONE', 'TRY', 'CATCH', 'THROW', 'NAMESPACE',
+    'FINALLY', 'TRAIT', 'YIELD',
 )
 
 # Not used by parser
@@ -105,8 +107,8 @@ tokens = reserved + unparsed + (
     'COMMA', 'CONCAT', 'QUESTION', 'COLON', 'SEMI', 'AT', 'NS_SEPARATOR',
 
     # Casts
-    'ARRAY_CAST', 'BOOL_CAST', 'DOUBLE_CAST', 'INT_CAST', 'OBJECT_CAST',
-    'STRING_CAST', 'UNSET_CAST',
+    'ARRAY_CAST', 'BINARY_CAST', 'BOOL_CAST', 'DOUBLE_CAST', 'INT_CAST',
+    'OBJECT_CAST', 'STRING_CAST', 'UNSET_CAST',
 
     # Escaping from HTML
     'INLINE_HTML',
@@ -122,6 +124,12 @@ tokens = reserved + unparsed + (
 
     # Heredocs
     'START_HEREDOC', 'END_HEREDOC',
+
+    # Nowdocs
+    'START_NOWDOC', 'END_NOWDOC',
+
+    # Backtick
+    'BACKTICK',
 
     # Comments
     'COMMENT', 'DOC_COMMENT',
@@ -219,6 +227,7 @@ def t_php_RBRACE(t):
 
 # Casts
 t_php_ARRAY_CAST           = r'\([ \t]*[Aa][Rr][Rr][Aa][Yy][ \t]*\)'
+t_php_BINARY_CAST          = r'\([ \t]*[Bb][Ii][Nn][Aa][Rr][Yy][ \t]*\)'
 t_php_BOOL_CAST            = r'\([ \t]*[Bb][Oo][Oo][Ll]([Ee][Aa][Nn])?[ \t]*\)'
 t_php_DOUBLE_CAST          = r'\([ \t]*([Rr][Ee][Aa][Ll]|[Dd][Oo][Uu][Bb][Ll][Ee]|[Ff][Ll][Oo][Aa][Tt])[ \t]*\)'
 t_php_INT_CAST             = r'\([ \t]*[Ii][Nn][Tt]([Ee][Gg][Ee][Rr])?[ \t]*\)'
@@ -241,7 +250,7 @@ def t_php_COMMENT(t):
 # Escaping from HTML
 
 def t_OPEN_TAG(t):
-    r'<[?%]((php[ \t\r\n]?)|=)?'
+    r'<[?%](([Pp][Hh][Pp][ \t\r\n]?)|=)?'
     if '=' in t.value: t.type = 'OPEN_TAG_WITH_ECHO'
     t.lexer.lineno += t.value.count("\n")
     t.lexer.begin('php')
@@ -273,7 +282,6 @@ reserved_map = {
     'OR':              'LOGICAL_OR',
     'XOR':             'LOGICAL_XOR',
 
-    'DIE':             'EXIT',
     '__HALT_COMPILER': 'HALT_COMPILER',
 }
 
@@ -298,7 +306,7 @@ def t_php_DNUMBER(t):
 
 # Integer literal
 def t_php_LNUMBER(t):
-    r'(0x[0-9A-Fa-f]+)|\d+'
+    r'(0b[01]+)|(0x[0-9A-Fa-f]+)|\d+'
     return t
 
 # String literal
@@ -403,11 +411,11 @@ def t_property_STRING(t):
 # Heredocs
 
 def t_php_START_HEREDOC(t):
-    r'<<<[ \t]*(?P<label>[A-Za-z_][\w_]*)\n'
+    r'<<<[ \t]*(?P<label>[A-Za-z_][\w_]*)\r?\n'
     t.lexer.lineno += t.value.count("\n")
     t.lexer.push_state('heredoc')
     t.lexer.heredoc_label = t.lexer.lexmatch.group('label')
-    return t   
+    return t
 
 def t_heredoc_END_HEREDOC(t):
     r'(?<=\n)[A-Za-z_][\w_]*'
@@ -416,6 +424,27 @@ def t_heredoc_END_HEREDOC(t):
         t.lexer.pop_state()
     else:
         t.type = 'ENCAPSED_AND_WHITESPACE'
+    return t
+
+def t_php_START_NOWDOC(t):
+    r'''<<<[ \t]*'(?P<label>[A-Za-z_][\w_]*)'\r?\n'''
+    t.lexer.lineno += t.value.count("\n")
+    t.lexer.push_state('nowdoc')
+    t.lexer.nowdoc_label = t.lexer.lexmatch.group('label')
+    return t
+
+def t_nowdoc_END_NOWDOC(t):
+    r'(?<=\n)[A-Za-z_][\w_]*'
+    if t.value == t.lexer.nowdoc_label:
+        del t.lexer.nowdoc_label
+        t.lexer.pop_state()
+    else:
+        t.type = 'ENCAPSED_AND_WHITESPACE'
+    return t
+
+def t_nowdoc_ENCAPSED_AND_WHITESPACE(t):
+    r'[^\n]*\n'
+    t.lexer.lineno += t.value.count("\n")
     return t
 
 def t_heredoc_ENCAPSED_AND_WHITESPACE(t):
@@ -442,6 +471,48 @@ t_heredocvar_OBJECT_OPERATOR = t_quotedvar_OBJECT_OPERATOR
 t_heredocvar_VARIABLE = t_quotedvar_VARIABLE
 t_heredocvar_CURLY_OPEN = t_quotedvar_CURLY_OPEN
 t_heredocvar_DOLLAR_OPEN_CURLY_BRACES = t_quotedvar_DOLLAR_OPEN_CURLY_BRACES
+
+# Backticks
+def t_php_BACKTICK(t):
+    r"`"
+    t.lexer.push_state('backticked')
+    return t
+
+def t_backticked_ENCAPSED_AND_WHITESPACE(t):
+    r'( [^`\\${] | \\(.|\n) | \$(?![A-Za-z_{]) | \{(?!\$) )+'
+    t.lexer.lineno += t.value.count("\n")
+    return t
+
+def t_backticked_VARIABLE(t):
+    r'\$[A-Za-z_][\w_]*'
+    t.lexer.push_state('backtickedvar')
+    return t
+
+t_backticked_CURLY_OPEN = t_quoted_CURLY_OPEN
+t_backticked_DOLLAR_OPEN_CURLY_BRACES = t_quoted_DOLLAR_OPEN_CURLY_BRACES
+
+def t_backticked_BACKTICK(t):
+    r"`"
+    t.lexer.pop_state()
+    return t
+
+def t_backtickedvar_BACKTICK(t):
+    r"`"
+    t.lexer.pop_state()
+    t.lexer.pop_state()
+    return t
+
+t_backtickedvar_LBRACKET = t_quotedvar_LBRACKET
+t_backtickedvar_OBJECT_OPERATOR = t_quotedvar_OBJECT_OPERATOR
+t_backtickedvar_VARIABLE = t_quotedvar_VARIABLE
+t_backtickedvar_CURLY_OPEN = t_quotedvar_CURLY_OPEN
+t_backtickedvar_DOLLAR_OPEN_CURLY_BRACES = t_quotedvar_DOLLAR_OPEN_CURLY_BRACES
+
+def t_backtickedvar_ENCAPSED_AND_WHITESPACE(t):
+    r'( [^`\\${] | \\(.|\n) | \$(?![A-Za-z_{]) | \{(?!\$) )+'
+    t.lexer.lineno += t.value.count("\n")
+    t.lexer.pop_state()
+    return t
 
 def t_ANY_error(t):
     raise SyntaxError('illegal character', (None, t.lineno, None, t.value))
@@ -490,6 +561,11 @@ class FilteredLexer(object):
 
             # Skip over open tags, but keep track of when we see them.
             if t.type == 'OPEN_TAG':
+                if self.last_token and self.last_token.type == 'SEMI':
+                    # Rewrite ?><?php as a semicolon.
+                    t.type = 'SEMI'
+                    t.value = ';'
+                    break
                 self.last_token = t
                 t = self.lexer.token()
                 continue
@@ -520,7 +596,7 @@ class FilteredLexer(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         t = self.token()
         if t is None:
             raise StopIteration
@@ -532,7 +608,7 @@ full_lexer = lex.lex()
 lexer = FilteredLexer(full_lexer)
 
 full_tokens = tokens
-tokens = filter(lambda token: token not in unparsed, tokens)
+tokens = [token for token in tokens if token not in unparsed]
 
-if __name__ == "__main__":
+def run_on_argv1():
     lex.runmain(full_lexer)

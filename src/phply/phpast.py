@@ -2,7 +2,9 @@
 # phpast.py
 #
 # PHP abstract syntax node definitions.
-# ----------------------------------------------------------------------
+#
+# This file is from https://github.com/viraptor/phply/
+# -----------------------------------------------------------------------------
 #
 # Copyright (c) 2010 by Dave Benjamin and contributors.  See AUTHORS
 # for more details.
@@ -12,7 +14,7 @@
 # Redistribution and use in source and binary forms of the software as well
 # as documentation, with or without modification, are permitted provided
 # that the following conditions are met:
-#
+# 
 # * Redistributions of source code must retain the above copyright
 #   notice, this list of conditions and the following disclaimer.
 #
@@ -37,6 +39,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE AND DOCUMENTATION, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 # DAMAGE.
+
 
 class Node(object):
     fields = []
@@ -107,20 +110,23 @@ Clone = node('Clone', ['node'])
 Break = node('Break', ['node'])
 Continue = node('Continue', ['node'])
 Return = node('Return', ['node'])
+Yield = node('Yield', ['node'])
 Global = node('Global', ['nodes'])
 Static = node('Static', ['nodes'])
 Echo = node('Echo', ['nodes'])
 Print = node('Print', ['node'])
 Unset = node('Unset', ['nodes'])
-Try = node('Try', ['nodes', 'catches'])
+Try = node('Try', ['nodes', 'catches', 'finally'])
 Catch = node('Catch', ['class_', 'var', 'nodes'])
+Finally = node('Finally', ['nodes'])
 Throw = node('Throw', ['node'])
 Declare = node('Declare', ['directives', 'node'])
 Directive = node('Directive', ['name', 'node'])
 Function = node('Function', ['name', 'params', 'nodes', 'is_ref'])
 Method = node('Method', ['name', 'modifiers', 'params', 'nodes', 'is_ref'])
 Closure = node('Closure', ['params', 'vars', 'nodes', 'is_ref'])
-Class = node('Class', ['name', 'type', 'extends', 'implements', 'nodes'])
+Class = node('Class', ['name', 'type', 'extends', 'implements', 'traits', 'nodes'])
+Trait = node('Trait', ['name', 'traits', 'nodes'])
 ClassConstants = node('ClassConstants', ['nodes'])
 ClassConstant = node('ClassConstant', ['name', 'initial'])
 ClassVariables = node('ClassVariables', ['modifiers', 'nodes'])
@@ -138,7 +144,7 @@ Empty = node('Empty', ['expr'])
 Eval = node('Eval', ['expr'])
 Include = node('Include', ['expr', 'once'])
 Require = node('Require', ['expr', 'once'])
-Exit = node('Exit', ['expr'])
+Exit = node('Exit', ['expr', 'type'])
 Silence = node('Silence', ['expr'])
 MagicConstant = node('MagicConstant', ['name', 'value'])
 Constant = node('Constant', ['name'])
@@ -172,6 +178,8 @@ UseDeclarations = node('UseDeclarations', ['nodes'])
 UseDeclaration = node('UseDeclaration', ['name', 'alias'])
 ConstantDeclarations = node('ConstantDeclarations', ['nodes'])
 ConstantDeclaration = node('ConstantDeclaration', ['name', 'initial'])
+TraitUse = node('TraitUse', ['name', 'renames'])
+TraitModifier = node('TraitModifier', ['from', 'to', 'visibility'])
 
 def resolve_magic_constants(nodes):
     current = {}

@@ -5,7 +5,10 @@ import re
 import sys
 import shutil
 import unittest
-from cStringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 from mock import Mock, patch
 from tempfile import mkdtemp
 from docutils.parsers.rst import Parser
